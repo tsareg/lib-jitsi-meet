@@ -44,6 +44,8 @@ keyMap[RTCBrowserType.RTC_BROWSER_IEXPLORER] =
     keyMap[RTCBrowserType.RTC_BROWSER_CHROME];
 keyMap[RTCBrowserType.RTC_BROWSER_SAFARI] =
     keyMap[RTCBrowserType.RTC_BROWSER_CHROME];
+keyMap[RTCBrowserType.RTC_BROWSER_REACT_NATIVE] =
+    keyMap[RTCBrowserType.RTC_BROWSER_CHROME];
 /**
  * Calculates packet lost percent using the number of lost packets and the
  * number of all packet.
@@ -59,11 +61,18 @@ function calculatePacketLoss(lostPackets, totalPackets) {
 
 function getStatValue(item, name) {
     var browserType = RTCBrowserType.getBrowserType();
-    if (!keyMap[browserType][name])
-        throw "The property isn't supported!";
-    var key = keyMap[browserType][name];
-    return (RTCBrowserType.isChrome() || RTCBrowserType.isOpera()) ?
-        item.stat(key) : item[key];
+    var keys = keyMap[browserType];
+    if (!keys)
+        throw "The browser type '" + browserType + "' isn't supported!";
+    if (!keys[name])
+        throw "The property '" + name + "' isn't supported!";
+    var key = keys[name];
+    return
+        (RTCBrowserType.isChrome()
+                || RTCBrowserType.isOpera()
+                || RTCBrowserType.isReactNative())
+            ? item.stat(key)
+            : item[key];
 }
 
 function formatAudioLevel(audioLevel) {
@@ -347,8 +356,10 @@ StatsCollector.prototype.start = function ()
         );
     }
 
-    // logging statistics does not support firefox
-    if (this.config.logStats && (browserSupported && !RTCBrowserType.isFirefox())) {
+    if (this.config.logStats
+            && browserSupported
+            // logging statistics does not support firefox
+            && !RTCBrowserType.isFirefox()) {
         this.gatherStatsIntervalId = setInterval(
             function () {
                 self.peerconnection.getStats(
